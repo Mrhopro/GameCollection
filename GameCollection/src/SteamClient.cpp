@@ -188,6 +188,30 @@ static bool waitForOpenIdResponse(string& requestText, string& errorMessage)
     ShellExecuteA(nullptr, "open", loginUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
     cout << "Підтвердіть вхід Steam у браузері. Очікується відповідь...\n";
 
+    fd_set readableSockets;
+    FD_ZERO(&readableSockets);
+    FD_SET(server, &readableSockets);
+
+    timeval waitTime{};
+    waitTime.tv_sec = 120;
+    waitTime.tv_usec = 0;
+
+    int socketReady = select(0, &readableSockets, nullptr, nullptr, &waitTime);
+    if (socketReady == 0)
+    {
+        closesocket(server);
+        WSACleanup();
+        errorMessage = "Час очікування входу Steam минув. Спробуйте ще раз.";
+        return false;
+    }
+    if (socketReady == SOCKET_ERROR)
+    {
+        closesocket(server);
+        WSACleanup();
+        errorMessage = "Помилка під час очікування відповіді Steam.";
+        return false;
+    }
+
     SOCKET client = accept(server, nullptr, nullptr);
     if (client == INVALID_SOCKET)
     {
