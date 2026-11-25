@@ -289,17 +289,17 @@ static bool parseOpenIdResponse(
         }
 
         valueStart += marker.size();
-        size_t valueEnd = query.find('&', valueStart);
+		size_t valueEnd = query.find('&', valueStart); // & separator between key-value
         string encodedValue = query.substr(
             valueStart,
-            valueEnd == string::npos ? string::npos : valueEnd - valueStart);
+			valueEnd == string::npos ? string::npos : valueEnd - valueStart); // how many char to copy
         values[i] = urlDecode(encodedValue);
     }
 
     const string steamIdPrefix = "http://steamcommunity.com/openid/id/";
     if (values[2].find(steamIdPrefix) != 0)
     {
-        errorMessage = "Steam не повернув правильний ідентифікатор профілю.";
+        errorMessage = "Steam повернув неправильний ідентифікатор профілю.";
         return false;
     }
 
@@ -317,17 +317,17 @@ static bool parseOpenIdResponse(
         return false;
     }
 
-    postData = "openid.mode=check_authentication";
+	postData = "openid.mode=check_authentication";
     for (int i = 0; i < 9; ++i)
     {
-        char* encodedValue = curl_easy_escape(
+		char* encodedValue = curl_easy_escape( // encode value for HTTP POST bc steam OpenID response may contain special characters
             curl,
             values[i].c_str(),
-            static_cast<int>(values[i].size()));
+			static_cast<int>(values[i].size())); // size_t to int
 
         if (encodedValue != nullptr)
         {
-            postData += "&" + keys[i] + "=" + encodedValue;
+			postData += "&" + keys[i] + "=" + encodedValue;
             curl_free(encodedValue);
         }
     }
@@ -357,7 +357,7 @@ static bool verifyOpenIdResponse(
     CURLcode result = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
 
-    if (result != CURLE_OK || response.find("is_valid:true") == string::npos)
+    if (result != CURLE_OK || response.find("is_valid:true") == string::npos) // ns:http://specs.openid.net/auth/2.0 is_valid:true
     {
         errorMessage = "Steam не підтвердив вхід OpenID.";
         return false;
@@ -368,7 +368,7 @@ static bool verifyOpenIdResponse(
 SteamClient::SteamClient()
 {
     char* key = nullptr;
-    size_t keySize = 0;
+	size_t keySize = 0; // api key size and key string
     errno_t result = _dupenv_s(&key, &keySize, "STEAM_WEB_API_KEY");
     if (result == 0 && key != nullptr)
     {
@@ -376,7 +376,7 @@ SteamClient::SteamClient()
     }
 
     free(key);
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+	curl_global_init(CURL_GLOBAL_DEFAULT); // Initialize libcurl globally
 }
 
 string SteamClient::getError() const
@@ -418,7 +418,7 @@ string SteamClient::request(const string& url)
     return response;
 }
 
-string SteamClient::resolveSteamId(const string& input)
+string SteamClient::resolveSteamId(const string& input) // https://steamcommunity.com/profiles/76561199231911456
 {
     if (isSteamId(input))
     {
@@ -457,9 +457,9 @@ string SteamClient::resolveSteamId(const string& input)
     string url =
         "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key=" +
         apiKey + "&vanityurl=" + name;
-    json data = json::parse(request(url), nullptr, false);
-    if (data.is_discarded() ||
-        !data.contains("response") ||
+    json data = json::parse(request(url), nullptr, false); // response: { "steamid": "76561199231911456", "success": 1 }
+    if (data.is_discarded() || 
+		!data.contains("response") || 
         data["response"].value("success", 0) != 1)
     {
         errorMessage = "Steam не зміг визначити SteamID за введеним посиланням.";
@@ -488,7 +488,7 @@ bool SteamClient::connectBySteamId(const string& input, Collection& collection)
     string url =
         "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" +
         apiKey + "&steamids=" + id;
-    json data = json::parse(request(url), nullptr, false);
+    json data = json::parse(request(url), nullptr, false); // response: { "players": [ { "personaname": "User Name" } ] }
     if (data.is_discarded() ||
         !data.contains("response") ||
         data["response"]["players"].empty())
@@ -537,7 +537,7 @@ string SteamClient::getSteamGenre(unsigned int appId)
         "https://store.steampowered.com/api/appdetails?appids=" +
         to_string(appId) + "&l=uk";
     json data = json::parse(request(url), nullptr, false);
-    string key = to_string(appId);
+	string key = to_string(appId); // app id is the key in the json response { "123456": { "success": true, "data": { "genres": [ { "id": "1", "description": "Action" } ] } } }
     if (data.is_discarded() ||
         !data.contains(key) ||
         !data[key].value("success", false) ||
