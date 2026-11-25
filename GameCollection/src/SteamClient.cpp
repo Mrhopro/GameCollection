@@ -152,7 +152,7 @@ static bool waitForOpenIdResponse(string& requestText, string& errorMessage)
         return false;
     }
 
-    SOCKET server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	SOCKET server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); // socket(AF_INET - IPv4, SOCK_STREAM надійне потокове з’єднання, IPPROTO_TCP - протокол TCP)
     if (server == INVALID_SOCKET)
     {
         WSACleanup();
@@ -160,13 +160,13 @@ static bool waitForOpenIdResponse(string& requestText, string& errorMessage)
         return false;
     }
 
-    sockaddr_in address{};
-    address.sin_family = AF_INET;
-    address.sin_port = htons(callbackPort);
-    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    sockaddr_in address{}; // socket address internet
+	address.sin_family = AF_INET; // soccket IPv4
+	address.sin_port = htons(callbackPort); // коневртація порту в мережевий порядок байтів
+	address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     bool serverReady =
-        ::bind(server, reinterpret_cast<sockaddr*>(&address), sizeof(address)) != SOCKET_ERROR &&
+		::bind(server, reinterpret_cast<sockaddr*>(&address), sizeof(address)) != SOCKET_ERROR && // sockaddr_in* to sockaddr*
         listen(server, 1) != SOCKET_ERROR;
 
     if (!serverReady)
@@ -178,14 +178,14 @@ static bool waitForOpenIdResponse(string& requestText, string& errorMessage)
     }
 
     string callbackUrl = "http://127.0.0.1:43821/";
-    string loginUrl =
+	string loginUrl = // OpenID parmeters 
         "https://steamcommunity.com/openid/login?openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
         "&openid.mode=checkid_setup&openid.return_to=" + callbackUrl +
         "&openid.realm=http%3A%2F%2F127.0.0.1%3A43821%2F"
         "&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select"
         "&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select";
 
-    ShellExecuteA(nullptr, "open", loginUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+	ShellExecuteA(nullptr, "open", loginUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL); // browser opening 
     cout << "Підтвердіть вхід Steam у браузері. Очікується відповідь...\n";
 
     fd_set readableSockets;
@@ -245,7 +245,7 @@ static bool parseOpenIdResponse(
     const string& requestText,
     string& steamId,
     string& postData,
-    string& errorMessage)
+    string& errorMessage) // GET /?openid.ns=...&openid.claimed_id=... HTTP/1.1
 {
     size_t queryStart = requestText.find("GET /?");
     if (queryStart == string::npos)
@@ -254,7 +254,7 @@ static bool parseOpenIdResponse(
         return false;
     }
 
-    size_t queryEnd = requestText.find(' ', queryStart + 5);
+	size_t queryEnd = requestText.find(' ', queryStart + 5);
     if (queryEnd == string::npos)
     {
         errorMessage = "Steam не повернув відповідь OpenID.";
