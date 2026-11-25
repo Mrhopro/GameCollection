@@ -29,7 +29,7 @@ static int readNumber(const string& prompt, int minimum, int maximum)
         char extraCharacter = '\0';
 
         if (inputStream >> value &&
-            !(inputStream >> extraCharacter) &&
+			!(inputStream >> extraCharacter) &&
             value >= minimum &&
             value <= maximum)
         {

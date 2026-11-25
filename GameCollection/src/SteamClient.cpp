@@ -582,7 +582,7 @@ bool SteamClient::importLibrary(Collection& collection)
         "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=" +
         apiKey + "&steamid=" + collection.getSteamId() +
         "&include_appinfo=1&include_played_free_games=1";
-    json data = json::parse(request(url), nullptr, false);
+	json data = json::parse(request(url), nullptr, false); // response: { "response": { "game_count": 123, "games": [ { "appid": 123456, "name": "Game Name" } ] } }
     if (data.is_discarded() ||
         !data.contains("response") ||
         !data["response"].contains("games"))
@@ -638,7 +638,7 @@ bool SteamClient::importLibrary(Collection& collection)
             "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=" +
             apiKey + "&steamid=" + collection.getSteamId() +
             "&appid=" + to_string(game.getAppId());
-        json achievementData = json::parse(request(achievementUrl), nullptr, false);
+		json achievementData = json::parse(request(achievementUrl), nullptr, false); // response: { "playerstats": { "steamID": "76561199231911456", "gameName": "Game Name", "achievements": [ { "apiname": "ACHIEVEMENT_1", "achieved": 1, "unlocktime": 1234567890 }, ... ] } }
         if (achievementData.is_discarded() ||
             !achievementData.contains("playerstats") ||
             !achievementData["playerstats"].value("success", false) ||
@@ -723,8 +723,8 @@ int SteamClient::scanInstalledGames(Collection& collection)
             if (isPath || isLibraryNumber)
             {
                 bool isAbsolutePath =
-                    values[1].find(":\\") != string::npos ||
-                    values[1].find("\\\\") == 0;
+					values[1].find(":\\") != string::npos ||
+					values[1].find("\\\\") == 0;
 
                 if (isAbsolutePath)
                 {
@@ -754,7 +754,7 @@ int SteamClient::scanInstalledGames(Collection& collection)
             }
 
             libraryFound = true;
-            for (const auto& entry : filesystem::directory_iterator(steamApps))
+			for (const auto& entry : filesystem::directory_iterator(steamApps)) // iterate through files in steamapps folder
             {
                 string fileName = entry.path().filename().string();
                 bool isManifest =
@@ -781,7 +781,7 @@ int SteamClient::scanInstalledGames(Collection& collection)
                 {
                     readManifestField(line, appId, stateFlags, name, installDir);
                 }
-                bool isMarkedInstalled = (stateFlags & 4) != 0;
+				bool isMarkedInstalled = (stateFlags & 4) != 0; // 4 = AppState_Installed
                 if (appId == 0 || !isMarkedInstalled || installDir.empty())
                 {
                     continue;
@@ -810,7 +810,7 @@ int SteamClient::scanInstalledGames(Collection& collection)
         return -1;
     }
 
-    for (Game& game : collection.getGames())
+    for (Game& game : collection.getGames()) // reset all 
     {
         if (game.getAppId() != 0)
         {
@@ -818,11 +818,11 @@ int SteamClient::scanInstalledGames(Collection& collection)
         }
     }
 
-    for (const LocalGameInfo& localGame : installedGames)
+	for (const LocalGameInfo& localGame : installedGames)
     {
         Game* game = nullptr;
 
-        for (Game& item : collection.getGames())
+		for (Game& item : collection.getGames()) // check if game already exists in collection
         {
             if (item.getAppId() == localGame.appId)
             {
@@ -876,7 +876,7 @@ bool SteamClient::launchInstalledGame(const Game& game)
         nullptr,
         SW_SHOWNORMAL);
 
-    if (reinterpret_cast<INT_PTR>(result) <= 32)
+	if (reinterpret_cast<INT_PTR>(result) <= 32) // https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutea
     {
         errorMessage = "Не вдалося відкрити Steam для запуску гри.";
         return false;
